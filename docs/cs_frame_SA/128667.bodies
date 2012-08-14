@@ -1,0 +1,15 @@
+class FuncObj
+!!!130203.cpp!!!	FuncObj(in aFuncName : char)
+        for (int i = 0; i < mStackCount; i++)
+        {
+            cout << ">";
+        }
+        cout << "Entering " << aFuncName << endl;   
+        mStackCount++;
+!!!130331.cpp!!!	~FuncObj()
+        mStackCount--;
+        for (int i = 0; i < mStackCount; i++)
+        {
+            cout << "<";
+        }
+        cout << "Exiting " << mFuncName << endl;

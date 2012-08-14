@@ -1,0 +1,11 @@
+window_sizes 1800 1050 450 1344 846 128
+diagrams
+  active  componentdiagram_ref 128155 // component_diag1
+    1075 676 100 4 0 0
+end
+show_stereotypes
+selected componentdiagram_ref 128155 // component_diag1
+open
+  componentview_ref 128027 // component_v1
+end
+end

@@ -1,0 +1,66 @@
+format 74
+
+classcanvas 128027 class_ref 128795 // client
+  class_drawing_mode default show_context_mode default show_stereotype_properties default
+  xyz 63.5 243 2000
+end
+packagecanvas 128283 
+  package_ref 128027 // appserver
+    xyzwh 439.5 239 2000 65 81
+end
+packagecanvas 128411 
+  package_ref 128155 // common
+    xyzwh 541 173 2000 65 81
+end
+packagecanvas 128539 
+  package_ref 128283 // log_util
+    xyzwh 545.5 282.5 2000 65 81
+end
+usecasecanvas 132251 usecase_ref 128155 // connect
+  xyzwh 196.5 153.5 3005 64 32 label_xy 206 187
+end
+classcanvas 132507 class_ref 128923 // server
+  class_drawing_mode default show_context_mode default show_stereotype_properties default
+  xyz 343 251 2000
+end
+usecasecanvas 132763 usecase_ref 128283 // issue command
+  xyzwh 199 281.5 3005 63 33 label_xy 187 314
+end
+usecasecanvas 133531 usecase_ref 128411 // drop offline
+  xyzwh 200.5 416 3005 64 32 label_xy 202 448
+end
+usecasecanvas 133915 usecase_ref 128539 // sign out
+  xyzwh 199.5 345.5 3011 64 32 label_xy 209 378
+end
+usecasecanvas 134043 usecase_ref 128667 // sign in
+  xyzwh 197 219.5 3005 64 32 label_xy 210 252
+end
+simplerelationcanvas 131739 simplerelation_ref 128027
+  from ref 128283 z 2001 to ref 128411
+end
+simplerelationcanvas 131867 simplerelation_ref 128155
+  from ref 128283 z 2001 to ref 128539
+end
+line 132635 ----
+  from ref 132251 z 3006 to ref 132507
+line 133147 ----
+  from ref 128027 z 3006 to ref 132251
+line 133275 ----
+  from ref 128027 z 3006 to ref 132763
+line 133403 ----
+  from ref 132763 z 3006 to ref 132507
+line 133659 ----
+  from ref 128027 z 3006 to ref 133531
+line 133787 ----
+  from ref 133531 z 3006 to ref 132507
+line 134171 ----
+  from ref 128027 z 3006 to ref 134043
+line 134299 ----
+  from ref 134043 z 3006 to ref 132507
+line 134427 ----
+  from ref 128027 z 3012 to ref 133915
+line 134555 ----
+  from ref 133915 z 3012 to ref 132507
+line 132891 -_-_
+  from ref 132507 z 2001 to ref 128283
+end

@@ -1,0 +1,20 @@
+class Servant
+!!!129563.cpp!!!	Servant(in client : sockinfo)
+        FUNCTRACE
+        LOGDEBUG("fd = " << mClient.fd);
+        LOGDEBUG("ip = " << inet_ntoa(mClient.addr.sin_addr));
+        LOGDEBUG("bufsize = " << sizeof(mBuf));
+!!!129691.cpp!!!	~Servant()
+        FUNCTRACE
+        LOGDEBUG("fd = " << mClient.fd);
+!!!129819.cpp!!!	takeIn() : void
+        mBytesAvailable = 0;
+        memset(mBuf, 0, sizeof(mBuf));
+        mBytesAvailable = read(mClient.fd, mBuf, sizeof(mBuf) - 1);
+        mCmdParser.parse();
+!!!129947.cpp!!!	putOut() : void
+        if (mCmdParser.availableBytes())
+        {
+            write(mClient.fd, mCmdParser.outputBuf(), mCmdParser.availableBytes());
+            mCmdParser.clearOutput();
+        }

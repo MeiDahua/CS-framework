@@ -1,0 +1,23 @@
+format 74
+
+componentcanvas 128027 component_ref 128027 // appserver
+  draw_component_as_icon yes show_component_req_prov default show_component_rea default show_stereotype_properties default
+  xyzwh 387 213 2000 85 49
+end
+arrowjunctioncanvas 128155 class_ref 128283 // AppServer
+  xyz 303 200 3005 label_xy 283 219
+arrowjunctioncanvas 128411 class_ref 128027 // AppCmdParser
+  xyz 312 258 3005 label_xy 279 277
+componentcanvas 128667 component_ref 134555 // main server
+  draw_component_as_icon yes show_component_req_prov default show_component_rea default show_stereotype_properties default
+  xyzwh 77 188 2000 95 49
+end
+arrowjunctioncanvas 128795 class_ref 128283 // AppServer
+  xyz 221 198 3005 label_xy 201 217
+line 128283 ---O
+  from ref 128027 z 3006 to ref 128155
+line 128539 ---O
+  from ref 128027 z 3006 to ref 128411
+line 128923 ---(
+  from ref 128667 z 3006 to ref 128795
+end

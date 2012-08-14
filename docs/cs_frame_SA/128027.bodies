@@ -1,0 +1,28 @@
+class AppCmdParser
+!!!128283.cpp!!!	parse() : void
+        FUNCTRACE
+        LOGDEBUG("input cmd: " << mRDBuf << "size: " << mInSize);
+        mWRBuf.clear();
+        if (strncmp(mRDBuf, "lshw", 4) == 0)
+        {
+            LOGDEBUG("CMD lshw");
+            FILE *pi = popen("lshw", "r");
+            if (pi != NULL)
+            {
+                char ch;
+                while (!feof(pi))
+                {
+                    fflush(pi);
+                    fread(&ch, sizeof(char), sizeof(char), pi);
+                    mWRBuf.push_back(ch);
+                }
+                
+                pclose(pi);
+            }
+        }
+!!!128411.cpp!!!	availableBytes() : uint
+        return mWRBuf.size();
+!!!128539.cpp!!!	outputBuf() : char
+        return mWRBuf.c_str();
+!!!128667.cpp!!!	clearOutput() : void
+        mWRBuf.clear();

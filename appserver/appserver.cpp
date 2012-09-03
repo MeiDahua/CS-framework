@@ -17,6 +17,10 @@ along with CS framework.  If not, see <http://www.gnu.org/licenses/>.*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <pthread.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
 #include "LogMacros.h"
 #include "appserver.h"
 #include "sockutil.h"
@@ -26,6 +30,7 @@ using namespace LOGUTIL;
 
 namespace CSFRAME {
     static struct timeval SERVINTVAL;
+    static pthread_mutex_t c_torLock;
 
     vector<sockinfo> AppServer::mClients;
     map<int, Servant*> AppServer::mServants;
@@ -35,25 +40,24 @@ namespace CSFRAME {
     {
         FUNCTRACE
         
+        int r, nfds = 0;
+        fd_set rd;
+        int readOK;
+
         for (;;)
         {
             usleep(1000);
             
-            int r, nfds = 0;
-            fd_set rd;//, wr;
             FD_ZERO(&rd);
-            //FD_ZERO(&wr);
             for (int i = 0; i < mClients.size(); i++)
             {
                 FD_SET(mClients[i].fd, &rd);
-                //FD_SET(mClients[i].fd, &wr);
                 nfds = max(nfds, mClients[i].fd);
             }
 
             if (nfds == 0)
                 continue;
 
-            //r = select(nfds + 1, &rd, &wr, NULL, &SERVINTVAL);
             r = select(nfds + 1, &rd, NULL, NULL, &SERVINTVAL);
             if (r == 0)
                 continue;
@@ -73,75 +77,15 @@ namespace CSFRAME {
                 {
                     //read
                     LOGDEBUG("fd " << mClients[i].fd << " ready to read");
-                    
-                    if (mServants.find(mClients[i].fd) != mServants.end())
+                    pthread_mutex_lock(&c_torLock);
+                    if (mServants.find(mClients[i].fd) == mServants.end())
                     {
-                        mServants[mClients[i].fd]->takeIn();
+                        pthread_mutex_unlock(&c_torLock);
+                        continue;
                     }
-                }
-                /*
-                if (FD_ISSET(mClients[i].fd, &wr))
-                {
-                    //write
-                    //LOGDEBUG("fd" << mClients[i].fd << "ready to write");
-                    if (mServants.find(mClients[i].fd) != mServants.end())
-                    {
-                        mServants[mClients[i].fd]->putOut();
-                    }
-                }*/
-            }
-        }
-        return 0;
-    }
-
-    void *AppServer::heartBeat(void *arg)
-    {
-        FUNCTRACE
-
-        for (;;)
-        {
-            LOGDEBUG("AppServer thread");
-            LOGDEBUG("Number of clients: "<< mClients.size());
-            int r, nfds = 0;
-            fd_set wr;
-            FD_ZERO(&wr);
-            for (int i = 0; i < mClients.size(); i++)
-            {
-                FD_SET(mClients[i].fd, &wr);
-                nfds = max(nfds, mClients[i].fd);
-            }
-
-            if (nfds == 0)
-            {
-                sleep(1);
-                continue;
-            }
-
-            r = select(nfds + 1, NULL, &wr, NULL, &SERVINTVAL);
-            if (r == 0)
-            {
-                LOGDEBUG("continued");
-                continue;
-            }
-
-            if (r == -1 && errno == EINTR)
-                continue;
-
-            if (r == -1)
-            {
-                LOGERROR("select() failed");
-                exit(-1);
-            }
-
-            for (int i = 0; i < mClients.size(); i++)
-            {
-                if (FD_ISSET(mClients[i].fd, &wr))
-                {
-                    //write
-                    LOGDEBUG("sending heartbeat to " << mClients[i].fd);
-                    r = write(mClients[i].fd, mMyName, strlen(mMyName) + 1);
-                    // if client is down, recycle all alocated resource
-                    if (r < 1)
+                    pthread_mutex_unlock(&c_torLock);
+                    readOK = mServants[mClients[i].fd]->takeIn();
+                    if (readOK != 0)
                     {
                         LOGWARNING("client fd " << mClients[i].fd << " is down");
                         delete mServants[mClients[i].fd];
@@ -154,11 +98,7 @@ namespace CSFRAME {
                     }
                 }
             }
-
-            if (mClients.size() != 0)
-                sleep(10);
         }
-
         return 0;
     }
 
@@ -177,12 +117,14 @@ namespace CSFRAME {
         close(mServerFd);
         for (int i = 0; i < mClients.size(); i++)
             close(mClients[i].fd);
+        pthread_mutex_destroy(&c_torLock);
     }
 
     int AppServer::init()
     {
         FUNCTRACE
         int re = 0;
+        pthread_mutex_init(&c_torLock, NULL);
         SERVINTVAL.tv_sec = 0;
         SERVINTVAL.tv_usec = 2000;  /* 0.002 seconds */
         // TCP socket
@@ -213,6 +155,8 @@ namespace CSFRAME {
     {
         FUNCTRACE
         int clientFd;
+        int keepAlive = 1;
+        int keepAliveSec = 5;
         sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
         pthread_t thread_t;
@@ -221,18 +165,21 @@ namespace CSFRAME {
         pthread_attr_t attr;
         pthread_attr_init(&attr);
         pthread_create(&thread_t, &attr, &AppServer::waiterThread, 0);
-        pthread_create(&thread_t, &attr, &AppServer::heartBeat, 0);
         pthread_attr_destroy(&attr);
         
 
         for (;;)
         {
             clientFd = accept(mServerFd, (sockaddr *)&clientAddr, &clientLen);
+            setsockopt(clientFd, SOL_SOCKET, SO_KEEPALIVE, (void*)&keepAlive, sizeof(keepAlive));
+            setsockopt(clientFd, IPPROTO_TCP, TCP_KEEPINTVL, (void*)&keepAliveSec, sizeof(keepAliveSec));
             sockinfo info;
             info.fd = clientFd;
             info.addr = clientAddr;
             mClients.push_back(info);
+            pthread_mutex_lock(&c_torLock);
             mServants[clientFd] = new Servant(info);
+            pthread_mutex_unlock(&c_torLock);
         }
     }
 

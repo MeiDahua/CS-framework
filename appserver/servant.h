@@ -44,7 +44,7 @@ namespace CSFRAME {
         explicit Servant(const sockinfo &client);
         ~Servant();
 
-        void takeIn();
+        int takeIn();
         //void putOut();
 
     private:

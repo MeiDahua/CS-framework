@@ -96,7 +96,7 @@ namespace CSFRAME {
         }
     }
 
-    void Servant::takeIn()
+    int Servant::takeIn()
     {
         ServantJob *job = new ServantJob;
         job->mBytesAvailable = read(mClient.fd, job->mBuf, sizeof(job->mBuf) - 1);
@@ -105,9 +105,13 @@ namespace CSFRAME {
             pthread_mutex_lock(&mJobLock);
             mIncomingJobs.push(job);
             pthread_mutex_unlock(&mJobLock);
+            return 0;
         }
         else
+        {
             delete job;
+            return 1;
+        }
     }
 #if 0
     void Servant::putOut()
